@@ -104,26 +104,31 @@ class SubtitleVideo:
             file.writelines(data)
         return result
 
-    def burn_subtitles_into_video(self):
+    def burn_subtitles_into_video(self,ass_file="subtitles.ass"):
         out_file = self.video_file.split(".")
         out_file[-2] = out_file[-2] + "_out"
         out_file = ".".join(out_file)
         out_file = os.path.join(os.environ["PROJECT_PATH"], out_file)
         os.chdir(self.tmp_dir)
         run(
-            f"ffmpeg -y -i {self.video_file} -vf ass=subtitles.ass {out_file}",
+            f"ffmpeg -y -i {self.video_file} -vf ass={ass_file} {out_file}",
             desc="Burning subtitles...",
         )
         return os.path.abspath(out_file)
 
-    def run(self):
+    def run(self,burn=True,ass_file=None):
         clean_dir(self.tmp_dir) if os.path.exists(self.tmp_dir) else os.mkdir(
             self.tmp_dir
         )
+        if ass_file is not None:
+            return "output file >> " + self.burn_subtitles_into_video()
         self.extract_audio_file()
         self.transcribe()
         self.srt_to_ass()
-        print("output file >> " + self.burn_subtitles_into_video())
+        if burn:
+            print("output file >> " + self.burn_subtitles_into_video())
+        else:
+            print(f"output transcribes >> {self.tmp_dir}/{os.path.basename(self.video_file)}.ass without burning into videos")
 
 
 def cli():
@@ -144,8 +149,13 @@ def cli():
         choices=["transcribe", "translate"],
         help="whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')",
     )
+    parser.add_argument(
+        "--no_burn",
+        help="only use it while requiring editing transcribes before burning into videos"
+    )
     args = parser.parse_args()
-    SubtitleVideo(args.model, args.video, args.task).run()
+    burn=False if args.no_burn else True
+    SubtitleVideo(args.model, args.video, args.task).run(burn=burn)
 
 
 if __name__ == "__main__":
