@@ -7,17 +7,22 @@ import sys
 def get_ffmpeg_exe():
     ffmpeg_status = shutil.which("ffmpeg")
     if ffmpeg_status:
-        return os.path.abspath(ffmpeg_status)
+        return
     url = "https://github.com/imageio/imageio-binaries/raw/master/ffmpeg/"
     _os = platform.system()
     if not ffmpeg_status:
+        bin_path = os.path.join(os.environ["PROJECT_PATH"], "bin")
+        if not os.path.exists(bin_path): os.mkdir(bin_path)
         file = platform_specific_binary(_os, "ffmpeg")
-        filename = os.path.join(os.environ["PROJECT_PATH"], "ffmpeg.exe" if _os == "Windows" else "ffmpeg")
+        filename = os.path.join(
+            bin_path, "ffmpeg.exe" if _os == "Windows" else "ffmpeg"
+        )
         print(
             "ffmpeg was not found! downloading from imageio/imageio-binaries repository."
         )
         download_file(url + file, filename)
     return filename
+
 
 def platform_specific_binary(_os, binary):
     files = {
