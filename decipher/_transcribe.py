@@ -1,6 +1,7 @@
 import argparse
 import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -61,7 +62,7 @@ def cli(raw_args=None):
         type=str,
         default=None,
         choices=sorted(LANGUAGES.keys())
-        + sorted([k.title() for k in TO_LANGUAGE_CODE.keys()]),
+                + sorted([k.title() for k in TO_LANGUAGE_CODE.keys()]),
         help="language spoken in the audio, specify None to perform language detection",
     )
 
@@ -183,8 +184,9 @@ def cli(raw_args=None):
     for audio_path in args.pop("audio"):
         result = transcribe(model, audio_path, temperature=temperature, **args)
 
-        # save SRT
+        srt_file = Path(audio_path).stem + ".srt"
+
         with open(
-            os.path.join(output_dir, "subtitles.srt"), "w", encoding="utf-8"
+                os.path.join(output_dir, srt_file), "w", encoding="utf-8"
         ) as srt:
             write_srt(result["segments"], file=srt)
