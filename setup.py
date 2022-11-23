@@ -1,8 +1,7 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='decipher',
-    packages=['decipher'],
     url='https://github.com/dsymbol/decipher',
     license='OSI Approved :: MIT License',
     author='dsymbol',
@@ -11,15 +10,16 @@ setup(
     description='Effortlessly add whisper AI generated transcription subtitles into provided video',
     install_requires=[
         'whisper @ git+https://github.com/openai/whisper.git'
-                      ],
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    packages=find_packages(),
     entry_points={
-            'console_scripts': [
-                'decipher = decipher.__main__:main'
-            ]
-        }
+        'console_scripts': [
+            'decipher = decipher.__main__:main'
+        ]
+    }
 )

@@ -1,12 +1,12 @@
 import argparse
 import os
+import sys
 from pathlib import Path
 
 import whisper
 
-from decipher import transcribe, subtitle
 from ._ffmpeg import get_ffmpeg_exe
-from .decipher import set_workdir
+from .decipher import set_workdir, transcribe, subtitle
 
 
 def cli():
@@ -104,3 +104,7 @@ def main():
             subs,
             args.task
         )
+
+
+if __name__ == "__main__":
+    sys.exit(main())

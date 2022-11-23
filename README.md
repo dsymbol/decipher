@@ -57,19 +57,19 @@ optional arguments:
 
 #### Examples
 
-Generate SRT subtitles for video.mp4
+Generate SRT subtitles for video
 
 ```bash
 decipher transcribe -i video.mp4 --model small
 ```
 
-Burn generated subtitles into video.mp4
+Burn generated subtitles into video
 
 ```bash
 decipher subtitle -i video.mp4 -s video.srt --task burn
 ```
 
-Together without validating transcribed content
+Together without validating transcription
 ```bash
 decipher transcribe -i video.mp4 --model small --subs burn
 ```
