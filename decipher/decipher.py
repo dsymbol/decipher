@@ -1,5 +1,7 @@
 import os
+import shlex
 import subprocess
+import sys
 from pathlib import Path
 from time import sleep
 from typing import Optional, Literal
@@ -79,7 +81,7 @@ def run(command, desc=None):
     if desc:
         print(desc)
         sleep(2)
-
+    command = shlex.split(command, posix=False if sys.platform == "win32" else True)
     p = subprocess.run(command, text=True)
 
     if p.returncode != 0:
