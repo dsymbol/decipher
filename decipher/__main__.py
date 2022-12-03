@@ -40,6 +40,12 @@ def cli():
         help="name of the whisper model to use",
     )
     transcribe.add_argument(
+        "--language",
+        type=str,
+        default=None,
+        help="language spoken in the audio"
+    )
+    transcribe.add_argument(
         "--task",
         type=str,
         default="transcribe",
@@ -93,6 +99,7 @@ def main():
             os.path.abspath(args.input),
             set_workdir(args.output),
             args.model,
+            args.language,
             args.task,
             args.subs
         )
