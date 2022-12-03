@@ -14,6 +14,7 @@ from ._transcribe import cli
 def transcribe(input: str,
                output: Optional[str] = "result",
                model: Optional[str] = "small",
+               language: Optional[str] = None,
                task: Optional[str] = "transcribe",
                subs: Literal["add", "burn"] = None):
     audio = change_file_extension(input, "aac")
@@ -22,8 +23,9 @@ def transcribe(input: str,
         desc="Extracting audio file...",
     )
 
-    whisper.transcribe.cli = cli
     args = ["--model", model, "--task", task, audio]
+    if language: args.extend(["--language", language])
+    whisper.transcribe.cli = cli
     whisper.transcribe.cli(args)
     srt = change_file_extension(input, "srt")
     assert os.path.exists(srt), f"SRT file not generated?"

@@ -20,7 +20,7 @@ robustness to accents, background noise and technical language.
 ## Installation
 
 ```bash
-pip install git+https://github.com/dsymbol/decipher
+$ pip install git+https://github.com/dsymbol/decipher
 ```
 
 ## Command-line usage
@@ -29,30 +29,7 @@ General command line usage help:
 
 ```bash
 $ decipher transcribe --help
-usage: decipher transcribe [-h] -i  [-o] [--model {tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large}] [--task {transcribe,translate}] [--subs {add,burn}]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i , --input          input video file path e.g. video.mp4
-  -o , --output         output directory path
-  --model {tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large}
-                        name of the whisper model to use
-  --task {transcribe,translate}
-                        whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')
-  --subs {add,burn}, -s {add,burn}
-                        whether to perform subtitle add or burn action
-```
-
-```bash
 $ decipher subtitle --help
-usage: decipher subtitle [-h] -i  [-o] --subs  [--task {add,burn}]
-
-optional arguments:
-  -h, --help         show this help message and exit
-  -i , --input       input video file path e.g. video.mp4
-  -o , --output      output directory path
-  --subs , -s        input subtitles path e.g. subtitle.srt
-  --task {add,burn}  whether to perform subtitle add or burn action
 ```
 
 #### Examples
@@ -60,16 +37,16 @@ optional arguments:
 Generate SRT subtitles for video
 
 ```bash
-decipher transcribe -i video.mp4 --model small
+$ decipher transcribe -i video.mp4 --model small
 ```
 
 Burn generated subtitles into video
 
 ```bash
-decipher subtitle -i video.mp4 -s video.srt --task burn
+$ decipher subtitle -i video.mp4 -s video.srt --task burn
 ```
 
-Together without validating transcription
+Generate and burn subtitles into video without validating transcription
 ```bash
-decipher transcribe -i video.mp4 --model small --subs burn
+$ decipher transcribe -i video.mp4 --model small --subs burn
 ```
