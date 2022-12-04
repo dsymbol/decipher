@@ -19,7 +19,7 @@ def transcribe(input: str,
                subs: Literal["add", "burn"] = None):
     audio = change_file_extension(input, "aac")
     run(
-        f"ffmpeg -y -i {input} -vn -acodec copy {audio}",
+        f"ffmpeg -y -i '{input}' -vn -acodec copy '{audio}'",
         desc="Extracting audio file...",
     )
 
@@ -40,7 +40,7 @@ def subtitle(input, output, subs, task: Literal["add", "burn"]):
         out = change_file_suffix(input, "_out")
         ass = change_file_extension(input, "ass")
         run(
-            f"ffmpeg -y -i {subs} {ass}",
+            f"ffmpeg -y -i '{subs}' '{ass}'",
             desc="Converting .SRT to .ASS",
         )
         with open(ass, "r", encoding="utf-8") as file:
@@ -54,13 +54,13 @@ def subtitle(input, output, subs, task: Literal["add", "burn"]):
         with open(ass, "w", encoding="utf-8") as file:
             file.writelines(data)
         run(
-            f"ffmpeg -y -i {input} -vf ass={ass} {out}",
+            f"ffmpeg -y -i '{input}' -vf 'ass={ass}' '{out}'",
             desc="Burning subtitles...",
         )
     else:
         out = change_file_extension(input, "mkv")
         run(
-            f"ffmpeg -y -i {input} -i {subs} -scodec copy {out}",
+            f"ffmpeg -y -i '{input}' -i '{subs}' -scodec copy '{out}'",
             desc="Adding subtitles...",
         )
     print(f"result >> {output}")
