@@ -1,13 +1,11 @@
 import os
-import shlex
-import subprocess
-import sys
 from pathlib import Path
-from time import sleep
 from typing import Optional, Literal
 
+import ffmpeg
 import whisper
 
+from . import ffpb
 from ._transcribe import cli
 
 
@@ -17,11 +15,15 @@ def transcribe(input: str,
                language: Optional[str] = None,
                task: Optional[str] = "transcribe",
                subs: Literal["add", "burn"] = None):
+    input_base = os.path.basename(input)
     audio = change_file_extension(input, "aac")
-    run(
-        f"ffmpeg -y -i {input} -vn -acodec copy {audio}",
-        desc="Extracting audio file...",
+    stream = (
+        ffmpeg
+        .input(input)
+        .output(audio, vn=None, acodec='copy')
+        .overwrite_output()
     )
+    execute(stream, desc=f"Converting {input_base} to {audio}...")
 
     args = ["--model", model, "--task", task, audio]
     if language: args.extend(["--language", language])
@@ -36,13 +38,19 @@ def transcribe(input: str,
 
 
 def subtitle(input, output, subs, task: Literal["add", "burn"]):
+    input_base = os.path.basename(input)
     if task == "burn":
-        out = change_file_suffix(input, "_out")
+        out = output_filename(input_base)
         ass = change_file_extension(input, "ass")
-        run(
-            f"ffmpeg -y -i {subs} {ass}",
-            desc="Converting .SRT to .ASS",
+
+        stream = (
+            ffmpeg
+            .input(subs)
+            .output(ass, f='ass')
+            .overwrite_output()
         )
+        execute(stream, desc="Converting `SubRip Subtitle file` to `Advanced SubStation Alpha file`")
+
         with open(ass, "r", encoding="utf-8") as file:
             data = file.readlines()
         for i in range(len(data)):
@@ -53,16 +61,32 @@ def subtitle(input, output, subs, task: Literal["add", "burn"]):
                 break
         with open(ass, "w", encoding="utf-8") as file:
             file.writelines(data)
-        run(
-            f"ffmpeg -y -i {input} -vf ass={ass} {out}",
-            desc="Burning subtitles...",
+
+        stream = (
+            ffmpeg
+            .input(input)
+            .output(out, vf=f'ass={ass}')
+            .overwrite_output()
         )
+        execute(stream, desc=f"Burning `Advanced SubStation Alpha file` into {input_base}...")
+
     else:
         out = change_file_extension(input, "mkv")
-        run(
-            f"ffmpeg -y -i {input} -i {subs} -scodec copy {out}",
-            desc="Adding subtitles...",
+
+        input_ffmpeg = ffmpeg.input(input)
+        input_ffmpeg_sub = ffmpeg.input(subs)
+
+        input_video = input_ffmpeg['v']
+        input_audio = input_ffmpeg['a']
+        input_subtitles = input_ffmpeg_sub['s']
+        stream = ffmpeg.output(
+            input_video, input_audio, input_subtitles, out,
+            vcodec='copy', acodec='copy', scodec='srt'
         )
+
+        stream = ffmpeg.overwrite_output(stream)
+        execute(stream, desc=f"Adding `SubRip Subtitle file` to {input_base}")
+
     print(f"result >> {output}")
 
 
@@ -71,30 +95,19 @@ def change_file_extension(file, extension):
     return filename
 
 
-def change_file_suffix(file, suffix):
-    video = os.path.basename(file)
-    filename = video.split(".")
-    filename[-2] = filename[-2] + suffix
-    filename = ".".join(filename)
-    return filename
+def output_filename(filename):
+    last_dot_index = filename.rfind(".")
+    name = filename[:last_dot_index]
+    extension = filename[last_dot_index:]
+    new_name = name + "_output"
+    new_filename = new_name + extension
+    return new_filename
 
 
-def run(command, desc=None):
-    if desc:
-        print(desc)
-        sleep(2)
-    command = shlex.split(command, posix=False if sys.platform == "win32" else True)
-    p = subprocess.run(command, text=True)
-
-    if p.returncode != 0:
-        message = (
-            f"Error running command.\n"
-            f"Command: {p.args}\n"
-            f"Error code: {p.returncode}\n"
-        )
-        raise RuntimeError(message)
-
-    return p.returncode
+def execute(stream, desc=None):
+    if desc: print(desc)
+    args = ffmpeg.get_args(stream)
+    ffpb.main(args)
 
 
 def set_workdir(folder):
