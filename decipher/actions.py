@@ -5,8 +5,8 @@ from typing import Optional, Literal
 import ffmpeg
 import whisper
 
-from . import ffpb
-from ._transcribe import cli
+from decipher import ffpb
+from decipher.transcribe import cli
 
 
 def transcribe(input: str,

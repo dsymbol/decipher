@@ -5,8 +5,8 @@ from pathlib import Path
 
 import whisper
 
-from ._ffmpeg import get_ffmpeg_exe
-from .decipher import set_workdir, transcribe, subtitle
+from decipher.ffexec import get_ffmpeg_exe
+from decipher.actions import set_workdir, transcribe, subtitle
 
 
 def cli():
