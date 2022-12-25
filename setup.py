@@ -9,7 +9,8 @@ setup(
     platforms='OS Independent',
     description='Effortlessly add whisper AI generated transcription subtitles into provided video',
     install_requires=[
-        'whisper @ git+https://github.com/openai/whisper.git'
+        'whisper @ git+https://github.com/openai/whisper.git',
+        'click==8.1.3',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
