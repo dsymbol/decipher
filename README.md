@@ -20,7 +20,7 @@ robustness to accents, background noise and technical language.
 ## Installation
 
 ```bash
-$ pip install git+https://github.com/dsymbol/decipher
+pip install git+https://github.com/dsymbol/decipher
 ```
 
 ## Command-line usage
@@ -28,8 +28,8 @@ $ pip install git+https://github.com/dsymbol/decipher
 General command line usage help:
 
 ```bash
-$ decipher transcribe --help
-$ decipher subtitle --help
+decipher transcribe --help
+decipher subtitle --help
 ```
 
 #### Examples
@@ -37,16 +37,16 @@ $ decipher subtitle --help
 Generate SRT subtitles for video
 
 ```bash
-$ decipher transcribe -i video.mp4 --model small
+decipher transcribe -i video.mp4 --model small
 ```
 
 Burn generated subtitles into video
 
 ```bash
-$ decipher subtitle -i video.mp4 -s video.srt --task burn
+decipher subtitle -i video.mp4 -s video.srt --task burn
 ```
 
 Generate and burn subtitles into video without validating transcription
 ```bash
-$ decipher transcribe -i video.mp4 --model small --subs burn
+decipher transcribe -i video.mp4 --model small --subs burn
 ```
