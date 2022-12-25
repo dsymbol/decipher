@@ -1,117 +1,57 @@
-import argparse
 import os
 import sys
-from pathlib import Path
 
+import click
 import whisper
 
-from decipher.ffexec import get_ffmpeg_exe
 from decipher.actions import set_workdir, transcribe, subtitle
+from decipher.ffexec import get_ffmpeg_exe
 
 
+@click.group(name='decipher', help='transcribe videos easily using openai whisper')
 def cli():
-    parser = argparse.ArgumentParser(
-        prog="decipher", description="Transcribe videos easily using OpenAI's whisper"
-    )
-    action = parser.add_subparsers(
-        dest="action", required=True
-    )
-    transcribe = action.add_parser(
-        "transcribe",
-        help="transcribe a video file",
-    )
-    transcribe.add_argument("-i",
-                            "--input",
-                            metavar="",
-                            type=str, required=True, help="input video file path e.g. video.mp4")
-    transcribe.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="result",
-        metavar="",
-        help="output directory path",
-    )
-    transcribe.add_argument(
-        "--model",
-        type=str,
-        default="small",
-        choices=whisper.available_models(),
-        help="name of the whisper model to use",
-    )
-    transcribe.add_argument(
-        "--language",
-        type=str,
-        default=None,
-        help="language spoken in the audio"
-    )
-    transcribe.add_argument(
-        "--task",
-        type=str,
-        default="transcribe",
-        choices=["transcribe", "translate"],
-        help="whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')",
-    )
-    transcribe.add_argument(
-        "--subs", "-s",
-        type=str,
-        default=None,
-        choices=["add", "burn"],
-        help="whether to perform subtitle add or burn action",
+    pass
+
+
+@cli.command(name='transcribe', help='transcribe a video')
+@click.option('-i', '--input', required=True, prompt="Enter video file path", type=str, help='input video file path e.g. video.mp4')
+@click.option('-o', '--output', type=str, default='result', help='output directory path')
+@click.option('--model', default='small', help='name of the whisper model to use', type=click.Choice(whisper.available_models()))
+@click.option('--language', default=None, help='language spoken in the audio')
+@click.option('--task', default='transcribe', help='whether to perform X->X speech recognition (\'transcribe\') or X->English translation (\'translate\')', type=click.Choice(['transcribe', 'translate']))
+@click.option('--subs', '-s', default=None, help='whether to perform subtitle add or burn action', type=click.Choice(['add','burn']))
+def transcribe_cmd(input, output, model, language, task, subs):
+    transcribe(
+        os.path.abspath(input),
+        set_workdir(output),
+        model,
+        language,
+        task,
+        subs
     )
 
-    subtitle = action.add_parser(
-        "subtitle",
-        help="subtitle a video file using an available srt file",
+
+@cli.command(name='subtitle', help='subtitle a video')
+@click.option('-i', '--input', required=True, prompt="Enter video file path", type=str, help='input video file path e.g. video.mp4')
+@click.option('-o', '--output', type=str, default='result', help='output directory path')
+@click.option('--subs', '-s', prompt="Enter subtitles file path", required=True, type=str, help='input subtitles path e.g. subtitle.srt')
+@click.option('--task', default='burn', help='whether to perform subtitle add or burn action', type=click.Choice(['add','burn']))
+def subtitle_cmd(input, output, subs, task):
+    subs = os.path.abspath(subs)
+    subtitle(
+        os.path.abspath(input),
+        set_workdir(output),
+        subs,
+        task
     )
-    subtitle.add_argument("-i",
-                          "--input",
-                          metavar="",
-                          type=str, required=True, help="input video file path e.g. video.mp4")
-    subtitle.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="result",
-        metavar="",
-        help="output directory path",
-    )
-    subtitle.add_argument("--subs", "-s", metavar="", required=True, type=str,
-                          help="input subtitles path e.g. subtitle.srt")
-    subtitle.add_argument(
-        "--task",
-        type=str,
-        default="burn",
-        choices=["add", "burn"],
-        help="whether to perform subtitle add or burn action",
-    )
-    return parser.parse_args()
 
 
 def main():
-    os.environ["PROJECT_PATH"] = os.environ["PROJECT_PATH"] = str(Path(__file__).parent)
+    os.environ["PROJECT_PATH"] = os.environ["PROJECT_PATH"] = os.path.dirname(__file__)
     os.environ["PATH"] += os.pathsep + os.path.join(os.environ["PROJECT_PATH"], "bin")
     get_ffmpeg_exe()
-
-    args = cli()
-    if args.action == "transcribe":
-        transcribe(
-            os.path.abspath(args.input),
-            set_workdir(args.output),
-            args.model,
-            args.language,
-            args.task,
-            args.subs
-        )
-    elif args.action == "subtitle":
-        subs = os.path.abspath(args.subs)
-        subtitle(
-            os.path.abspath(args.input),
-            set_workdir(args.output),
-            subs,
-            args.task
-        )
+    cli()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())
