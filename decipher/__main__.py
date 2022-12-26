@@ -47,7 +47,7 @@ def subtitle_cmd(input, output, subs, task):
 
 
 def main():
-    os.environ["PROJECT_PATH"] = os.environ["PROJECT_PATH"] = os.path.dirname(__file__)
+    os.environ["PROJECT_PATH"] = os.path.dirname(__file__)
     os.environ["PATH"] += os.pathsep + os.path.join(os.environ["PROJECT_PATH"], "bin")
     get_ffmpeg_exe()
     cli()
