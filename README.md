@@ -1,8 +1,8 @@
 # Decipher 📺️</h1>
 
-Effortlessly add AI-generated transcription subtitles to your videos 
+AI-generated transcription subtitles are a way to automatically add subtitles to your videos by using artificial intelligence to transcribe the audio from the video. This eliminates the need for manual transcription and can make your videos more accessible to a wider audience. Decipher uses [whisper](#what-is-whisper) to transcribe the audio taken from the video and create subtitles
 
-**What is whisper?**  
+#### What is whisper?
 [Whisper](https://github.com/openai/whisper) is an automatic State-of-the-Art speech recognition system from OpenAI that has been trained on 680,000 hours
 of multilingual and multitask supervised data collected from the web. This large and diverse dataset leads to improved
 robustness to accents, background noise and technical language.
@@ -14,8 +14,6 @@ There are a two different ways to begin using the decipher, depending on your pr
 * [`Google Colab`](#google-colab)
 * [`Manual`](#manual)
 
----
-
 ### [Google Colab](https://colab.research.google.com/github/dsymbol/decipher/blob/main/decipher.ipynb)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dsymbol/decipher/blob/main/decipher.ipynb)
 
@@ -24,8 +22,6 @@ Notes:
 - Instructions are embedded in the Colab Notebook
 
 Google Colab is a cloud-based platform for machine learning and data science, for free without the need for a powerful GPU of your own. It offers the option to borrow a powerful GPU (Tesla K80, T4, P4, or P100) on their server for free for a maximum of 12 hours per session. For those who require even more powerful GPUs and longer runtimes, Colab Pro/Pro+ options are available.
-
----
 
 ### Manual
 
