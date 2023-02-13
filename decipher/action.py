@@ -2,17 +2,17 @@ import os
 from pathlib import Path
 
 import ffmpeg
+import torch
 import whisper
+from whisper.utils import get_writer
 
 from decipher import ffpb
-from decipher.transcribe import cli
 
 
 def transcribe(video_in, output_dir, model, language, task, subs):
     video_in = Path(video_in).absolute()
     output_dir = set_workdir(output_dir)
     audio_file = video_in.stem + ".aac"
-
     stream = (
         ffmpeg
         .input(video_in)
@@ -21,11 +21,14 @@ def transcribe(video_in, output_dir, model, language, task, subs):
     )
     execute(stream, desc=f"Converting {video_in.name} to {audio_file}...")
 
-    args = ["--model", model, "--task", task, audio_file]
-    if language: args.extend(["--language", language])
-    whisper.transcribe.cli = cli
-    whisper.transcribe.cli(args)
+    gpu = torch.cuda.is_available()
+    model = whisper.load_model(model)
+    result = model.transcribe(audio_file, task=task, language=language, verbose=True, fp16=gpu)
+    writer = get_writer("srt", ".")
+
+    writer(result, video_in.stem)
     srt_file = video_in.stem + ".srt"
+
     assert os.path.exists(srt_file), f"SRT file not generated?"
     if subs:
         subtitle(video_in, output_dir, srt_file, subs)
@@ -56,7 +59,7 @@ def subtitle(video_in, output_dir, subs, task):
             if data[i].startswith("Style"):
                 data[
                     i
-                ] = "Style: Default,Calibri,14,&H00FFFFFF,&H000000FF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,4,0,0,2,10,10,10,1\n"
+                ] = "Style: Default,Calibri,16,&H00FFFFFF,&H000000FF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,4,0,0,2,10,10,10,1\n"
                 break
         with open(ass_file, "w", encoding="utf-8") as file:
             file.writelines(data)
