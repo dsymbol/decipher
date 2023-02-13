@@ -7,6 +7,9 @@ import whisper
 from decipher.action import transcribe, subtitle
 from decipher.ffexec import get_ffmpeg_exe
 
+os.environ["PROJECT_PATH"] = os.path.dirname(__file__)
+os.environ["PATH"] += os.pathsep + os.path.join(os.environ["PROJECT_PATH"], "bin")
+
 
 @click.group(name='decipher', help='transcribe videos easily using openai whisper')
 def cli():
@@ -19,7 +22,7 @@ def cli():
 @click.option('--model', default='small', help='name of the whisper model to use', type=click.Choice(whisper.available_models()))
 @click.option('--language', default=None, help='language spoken in the audio')
 @click.option('--task', default='transcribe', help='whether to perform X->X speech recognition (\'transcribe\') or X->English translation (\'translate\')', type=click.Choice(['transcribe', 'translate']))
-@click.option('-a', '--subtitle_action', default=None, help='whether to perform subtitle add or burn action', type=click.Choice(['add','burn']))
+@click.option('-a', '--subtitle_action', default=None, help='whether to perform subtitle add or burn action', type=click.Choice(['add', 'burn']))
 def _transcribe_cli(input, output_dir, model, language, task, subtitle_action):
     transcribe(
         input,
@@ -46,8 +49,6 @@ def _subtitle_cli(input, output_dir, subtitle_file, subtitle_action):
 
 
 def main():
-    os.environ["PROJECT_PATH"] = os.path.dirname(__file__)
-    os.environ["PATH"] += os.pathsep + os.path.join(os.environ["PROJECT_PATH"], "bin")
     get_ffmpeg_exe()
     cli()
 
