@@ -59,7 +59,7 @@ def subtitle(video_in, output_dir, subs, task):
             if data[i].startswith("Style"):
                 data[
                     i
-                ] = "Style: Default,Calibri,16,&H00FFFFFF,&H000000FF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,4,0,0,2,10,10,10,1\n"
+                ] = "Style: Default,Open Sans,16,&H00FFFFFF,&H000000FF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,4,0,0,2,10,10,10,1\n"
                 break
         with open(ass_file, "w", encoding="utf-8") as file:
             file.writelines(data)
