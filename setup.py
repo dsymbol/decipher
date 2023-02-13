@@ -5,8 +5,8 @@ setup(
     url='https://github.com/dsymbol/decipher',
     author='dsymbol',
     install_requires=[
-        'whisper @ git+https://github.com/openai/whisper.git',
-        'click==8.1.3',
+        'openai-whisper==20230124',
+        'click==8.1.3'
     ],
     packages=find_packages(),
     entry_points={
