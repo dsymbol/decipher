@@ -7,6 +7,7 @@ setup(
     install_requires=[
         'openai-whisper==20230124',
         'click==8.1.3'
+        'ffpb==0.4.1'
     ],
     packages=find_packages(),
     entry_points={

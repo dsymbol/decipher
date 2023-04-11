@@ -6,7 +6,7 @@ import torch
 import whisper
 from whisper.utils import get_writer
 
-from decipher import ffpb
+from ffpb import main as ffpb
 
 
 def transcribe(video_in, output_dir, model, language, task, subs):
@@ -95,7 +95,7 @@ def subtitle(video_in, output_dir, subs, task):
 def execute(stream, desc=None):
     if desc: print(desc)
     args = ffmpeg.get_args(stream)
-    ffpb.main(args)
+    ffpb(args)
 
 
 def file_janitor():
