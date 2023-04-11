@@ -1,73 +1,67 @@
 import os
 import platform
 import shutil
-import sys
 import stat
+import sys
+from urllib.parse import urlparse
+
+import requests
+import tqdm
+
+BIN_PATH = os.path.join(os.path.dirname(__file__), 'bin')
+
+BINARIES = {
+    "Linux": {"ffmpeg": "ffmpeg-linux64-v4.1", "ffprobe": "ffprobe-linux64-v4.1"},
+    "Darwin": {"ffmpeg": "ffmpeg-osx64-v4.1", "ffprobe": "ffprobe-osx64-v4.1"},
+    "Windows": {"ffmpeg": "ffmpeg-win64-v4.1.exe", "ffprobe": "ffprobe-win64-v4.1.exe"}
+}
 
 
-def get_ffmpeg_exe():
-    if shutil.which("ffmpeg"):
-        return
-    url = "https://github.com/imageio/imageio-binaries/raw/master/ffmpeg/"
-    _os = platform.system()
-    bin_path = os.path.join(os.environ["PROJECT_PATH"], "bin")
-    if not os.path.exists(bin_path): os.mkdir(bin_path)
-    file = platform_specific_binary(_os, "ffmpeg")
-    filename = os.path.join(
-        bin_path, "ffmpeg.exe" if _os == "Windows" else "ffmpeg"
-    )
-    print(
-        "ffmpeg was not found! downloading from imageio/imageio-binaries repository."
-    )
-    download_file(url + file, filename)
-    st = os.stat(filename)
-    os.chmod(filename, st.st_mode | stat.S_IEXEC)
-    return filename
+def get_ffmpeg_exe(ffmpeg: bool = True, ffprobe: bool = False):
+    localvars = locals().copy()
+    exes = [exe for exe in ['ffmpeg', 'ffprobe'] if localvars[exe]]
+    os_ = platform.system()
 
-
-def platform_specific_binary(_os, binary):
-    files = {
-        "Linux": {"ffmpeg": "ffmpeg-linux64-v4.1", "ffprobe": "ffprobe-linux64-v4.1"},
-        "Darwin": {"ffmpeg": "ffmpeg-osx64-v4.1", "ffprobe": "ffprobe-osx64-v4.1"},
-        "Windows": {
-            "ffmpeg": "ffmpeg-win64-v4.1.exe",
-            "ffprobe": "ffprobe-win64-v4.1.exe",
-        },
-    }
-    return files[_os][binary]
-
-
-def download_file(url: str, filename: str, show_progress_bar=True):
-    try:
-        import requests
-    except ImportError:
-        raise ImportError(
-            "requests module not found! run `pip install requests` in cmd"
+    for exe in exes:
+        if shutil.which(exe):
+            continue
+        if not os.path.exists(BIN_PATH):
+            os.makedirs(BIN_PATH)
+        url = "https://github.com/imageio/imageio-binaries/raw/master/ffmpeg/" + BINARIES[os_][exe]
+        filename = os.path.join(
+            BIN_PATH, f"{exe}.exe" if os_ == "Windows" else exe
         )
+        print(
+            f"{exe} was not found! downloading from imageio/imageio-binaries repository."
+        )
+        try:
+            download_file(url, filename)
+        except Exception as f:
+            shutil.rmtree(BIN_PATH)
+            sys.exit(str(f))
+        st = os.stat(filename)
+        os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
+
+def download_file(url, filename=None):
     if not filename:
-        filename = url.split("/")[-1]
-    with open(f"{filename}", "wb") as f:
-        response = requests.get(url, stream=True)
-        total_length = response.headers.get("content-length")
-        chunk_size = 4096
+        parsed_url = urlparse(url)
+        filename = os.path.basename(parsed_url.path)
 
-        if total_length is None:
-            f.write(response.content)
-        else:
-            dl = 0
-            full_length = int(total_length)
+    r = requests.get(url, stream=True)
+    try:
+        file_size = int(r.headers['Content-Length'])
+    except KeyError:
+        file_size = 1000
+    chunk_size = 1024
+    num_bars = int(file_size / chunk_size)
 
-            for data in response.iter_content(chunk_size=chunk_size):
-                dl += len(data)
-                f.write(data)
-
-                if show_progress_bar:
-                    complete = int(25 * dl / full_length)
-                    fill_c = "#" * complete
-                    unfill_c = "-" * (25 - complete)
-                    sys.stdout.write(
-                        f"\r{filename} {fill_c}{unfill_c} {round(dl / 1000000, 1)} / {round(full_length / 1000000, 1)} MB"
-                    )
-                    sys.stdout.flush()
-    print()
+    with open(filename, 'wb') as fp:
+        for chunk in tqdm.tqdm(
+            r.iter_content(chunk_size=chunk_size),
+            total=num_bars,
+            unit='KB',
+            desc=os.path.basename(filename),
+            leave=True
+        ):
+            fp.write(chunk)
