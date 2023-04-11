@@ -5,7 +5,7 @@ import click
 import whisper
 
 from decipher.action import transcribe, subtitle
-from decipher.ffexec import get_ffmpeg_exe
+from decipher.ffdl import get_ffmpeg_exe
 
 os.environ["PROJECT_PATH"] = os.path.dirname(__file__)
 os.environ["PATH"] += os.pathsep + os.path.join(os.environ["PROJECT_PATH"], "bin")
