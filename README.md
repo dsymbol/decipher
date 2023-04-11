@@ -9,13 +9,13 @@ robustness to accents, background noise and technical language.
 
 ## Getting Started
 
-There are a two different ways to begin using decipher, depending on your preferences:
+There are two different ways to begin using decipher, depending on your preferences:
 
 * [`Google Colab`](#google-colab)
 * [`Manual`](#manual)
 
 ### Google Colab
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dsymbol/decipher/blob/main/decipher.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dsymbol/decipher/blob/main/notebook.ipynb)
 
 Notes:
 - Requires a (free) Google account
