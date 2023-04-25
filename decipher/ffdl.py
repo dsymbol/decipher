@@ -3,10 +3,11 @@ import platform
 import shutil
 import stat
 import sys
+from tempfile import NamedTemporaryFile
 from urllib.parse import urlparse
 
 import requests
-import tqdm
+from tqdm import tqdm
 
 BIN_PATH = os.path.join(os.path.dirname(__file__), 'bin')
 
@@ -49,19 +50,19 @@ def download_file(url, filename=None):
         filename = os.path.basename(parsed_url.path)
 
     r = requests.get(url, stream=True)
-    try:
-        file_size = int(r.headers['Content-Length'])
-    except KeyError:
-        file_size = 1000
+    file_size = int(r.headers.get('content-length', 0))
     chunk_size = 1024
-    num_bars = int(file_size / chunk_size)
 
-    with open(filename, 'wb') as fp:
-        for chunk in tqdm.tqdm(
-            r.iter_content(chunk_size=chunk_size),
-            total=num_bars,
-            unit='KB',
+    with NamedTemporaryFile(mode='wb', delete=False) as temp, tqdm(
             desc=os.path.basename(filename),
+            total=file_size,
+            unit='iB',
+            unit_scale=True,
+            unit_divisor=1024,
             leave=True
-        ):
-            fp.write(chunk)
+    ) as bar:
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            size = temp.write(chunk)
+            bar.update(size)
+
+    os.rename(temp.name, filename)
