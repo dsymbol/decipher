@@ -32,9 +32,17 @@ Google Colab is a cloud-based platform for machine learning and data science, fo
 
 #### Installation
 
-```bash
+```
 pip install git+https://github.com/dsymbol/decipher
 ```
+
+or
+
+```
+git clone https://github.com/dsymbol/decipher
+cd decipher && pip install . 
+```
+*Note: Do NOT use 'pip install decipher'. It installs a different package.*
 
 #### Command-line usage
 
