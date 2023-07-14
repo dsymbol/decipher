@@ -12,6 +12,8 @@ os.environ["PATH"] += os.pathsep + os.path.join(os.environ["PROJECT_PATH"], "bin
 
 
 @click.group(name='decipher', help='transcribe videos easily using openai whisper')
+@click.version_option(version='1.0.0-doug', prog_name='decipher')  # replace '1.0.0' with your desired version number
+
 def cli():
     pass
 
