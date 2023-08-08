@@ -3,6 +3,7 @@ from pathlib import Path
 
 import ffmpeg
 import torch
+import random
 import whisper
 from whisper.utils import get_writer
 
@@ -26,8 +27,10 @@ def transcribe(video_in, output_dir, model, language, task, subs):
     result = model.transcribe(audio_file, task=task, language=language, verbose=True, fp16=gpu)
     writer = get_writer("srt", ".")
 
-    writer(result, video_in.stem)
+    temp_srt_file_name = "".join(random.choice(("bcdfghjklmnpqrstvwxyz", "aeiou")[i%2]) for i in range(10))
+    writer(result, temp_srt_file_name)
     srt_file = video_in.stem + ".srt"
+    os.rename(temp_srt_file_name + ".srt", srt_file)
 
     assert os.path.exists(srt_file), f"SRT file not generated?"
     if subs:
