@@ -11,6 +11,7 @@ from whisper.utils import get_writer
 
 def transcribe(video_in, output_dir, model, language, task, subs):
     video_in = Path(video_in).absolute()
+    assert video_in.exists(), f"File {video_in} does not exist"
     output_dir = set_workdir(output_dir)
     audio_file = video_in.stem + ".aac"
     stream = (
@@ -45,6 +46,8 @@ def transcribe(video_in, output_dir, model, language, task, subs):
 
 def subtitle(video_in, output_dir, subs, task):
     video_in, subs = Path(video_in).absolute(), Path(subs).absolute()
+    assert video_in.exists(), f"File {video_in} does not exist"
+    assert subs.exists(), f"File {subs} does not exist"
     output_dir = set_workdir(output_dir)
     if task == "burn":
         video_out = video_in.stem + "_output" + video_in.suffix
