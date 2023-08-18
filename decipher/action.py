@@ -9,16 +9,22 @@ from whisper.utils import get_writer
 from ffpb import main as ffpb
 
 
-def transcribe(video_in, output_dir, model, language, task, subs):
+def transcribe(video_in, output_dir, model, language, task, subs, minute=None):
     video_in = Path(video_in).absolute()
     output_dir = set_workdir(output_dir)
     audio_file = video_in.stem + ".aac"
-    stream = (
-        ffmpeg
-        .input(video_in)
-        .output(audio_file, vn=None, acodec='copy')
-        .overwrite_output()
-    )
+
+    # Define the start and end times for the specific minute if provided
+    stream = ffmpeg.input(video_in)
+    
+    if minute is not None:
+        start_time = f"{minute}:00"
+        duration = "60"  # 60 seconds
+        stream = stream.output(audio_file, ss=start_time, t=duration, vn=None, acodec='copy')
+    else:
+        stream = stream.output(audio_file, vn=None, acodec='copy')
+        
+    stream = stream.overwrite_output()
     execute(stream, desc=f"Converting {video_in.name} to {audio_file}...")
 
     gpu = torch.cuda.is_available()
@@ -36,6 +42,7 @@ def transcribe(video_in, output_dir, model, language, task, subs):
 
     file_janitor()
     print(f"Output -> {output_dir}")
+
 
 
 def subtitle(video_in, output_dir, subs, task):
