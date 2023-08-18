@@ -1,16 +1,17 @@
 import os
+import random
 from pathlib import Path
 
 import ffmpeg
 import torch
 import whisper
-from whisper.utils import get_writer
-
 from ffpb import main as ffpb
+from whisper.utils import get_writer
 
 
 def transcribe(video_in, output_dir, model, language, task, subs, minute=None):
     video_in = Path(video_in).absolute()
+    assert video_in.exists(), f"File {video_in} does not exist"
     output_dir = set_workdir(output_dir)
     audio_file = video_in.stem + ".aac"
 
@@ -29,11 +30,17 @@ def transcribe(video_in, output_dir, model, language, task, subs, minute=None):
 
     gpu = torch.cuda.is_available()
     model = whisper.load_model(model)
-    result = model.transcribe(audio_file, task=task, language=language, verbose=True, fp16=gpu)
+    result = model.transcribe(
+        audio_file, task=task, language=language, verbose=True, fp16=gpu
+    )
     writer = get_writer("srt", ".")
 
-    writer(result, video_in.stem)
+    temp_srt_file_name = "".join(
+        random.choice(("bcdfghjklmnpqrstvwxyz", "aeiou")[i % 2]) for i in range(10)
+    )
+    writer(result, temp_srt_file_name)
     srt_file = video_in.stem + ".srt"
+    os.rename(temp_srt_file_name + ".srt", srt_file)
 
     assert os.path.exists(srt_file), f"SRT file not generated?"
     if subs:
@@ -47,18 +54,18 @@ def transcribe(video_in, output_dir, model, language, task, subs, minute=None):
 
 def subtitle(video_in, output_dir, subs, task):
     video_in, subs = Path(video_in).absolute(), Path(subs).absolute()
+    assert video_in.exists(), f"File {video_in} does not exist"
+    assert subs.exists(), f"File {subs} does not exist"
     output_dir = set_workdir(output_dir)
     if task == "burn":
         video_out = video_in.stem + "_output" + video_in.suffix
         ass_file = video_in.stem + ".ass"
 
-        stream = (
-            ffmpeg
-            .input(subs)
-            .output(ass_file, f='ass')
-            .overwrite_output()
+        stream = ffmpeg.input(subs).output(ass_file, f="ass").overwrite_output()
+        execute(
+            stream,
+            desc="Converting `SubRip Subtitle file` to `Advanced SubStation Alpha file`",
         )
-        execute(stream, desc="Converting `SubRip Subtitle file` to `Advanced SubStation Alpha file`")
 
         with open(ass_file, "r", encoding="utf-8") as file:
             data = file.readlines()
@@ -72,12 +79,14 @@ def subtitle(video_in, output_dir, subs, task):
             file.writelines(data)
 
         stream = (
-            ffmpeg
-            .input(video_in)
-            .output(video_out, vf=f'ass={ass_file}')
+            ffmpeg.input(video_in)
+            .output(video_out, vf=f"ass={ass_file}")
             .overwrite_output()
         )
-        execute(stream, desc=f"Burning `Advanced SubStation Alpha file` into {video_in.name}...")
+        execute(
+            stream,
+            desc=f"Burning `Advanced SubStation Alpha file` into {video_in.name}...",
+        )
 
     else:
         video_out = video_in.stem + "_output.mkv"
@@ -85,12 +94,17 @@ def subtitle(video_in, output_dir, subs, task):
         input_ffmpeg = ffmpeg.input(video_in)
         input_ffmpeg_sub = ffmpeg.input(subs)
 
-        input_video = input_ffmpeg['v']
-        input_audio = input_ffmpeg['a']
-        input_subtitles = input_ffmpeg_sub['s']
+        input_video = input_ffmpeg["v"]
+        input_audio = input_ffmpeg["a"]
+        input_subtitles = input_ffmpeg_sub["s"]
         stream = ffmpeg.output(
-            input_video, input_audio, input_subtitles, video_out,
-            vcodec='copy', acodec='copy', scodec='srt'
+            input_video,
+            input_audio,
+            input_subtitles,
+            video_out,
+            vcodec="copy",
+            acodec="copy",
+            scodec="srt",
         )
         stream = ffmpeg.overwrite_output(stream)
         execute(stream, desc=f"Adding `SubRip Subtitle file` to {video_in.name}")
@@ -100,14 +114,15 @@ def subtitle(video_in, output_dir, subs, task):
 
 
 def execute(stream, desc=None):
-    if desc: print(desc)
+    if desc:
+        print(desc)
     args = ffmpeg.get_args(stream)
     ffpb(args)
 
 
 def file_janitor():
     for file in os.listdir():
-        if file.endswith('.ass') or file.endswith('.aac'):
+        if file.endswith(".ass") or file.endswith(".aac"):
             os.remove(file)
 
 
