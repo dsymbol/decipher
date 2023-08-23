@@ -5,7 +5,7 @@ import sys
 from whisper import available_models
 
 from decipher.action import subtitle, transcribe
-from decipher.ffdl import get_ffmpeg_exe
+from decipher.ff import get_ffmpeg_exe
 
 os.environ["PATH"] += os.pathsep + os.path.join(os.path.dirname(__file__), "bin")
 
