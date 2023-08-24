@@ -6,7 +6,6 @@ setup(
     author='dsymbol',
     install_requires=[
         'openai-whisper==20230314',
-        'ffpb==0.4.1',
         'tqdm'
     ],
     packages=find_packages(),

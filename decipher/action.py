@@ -1,12 +1,14 @@
 import os
 import random
+import shutil
+import string
 from pathlib import Path
 
-import ffmpeg
 import torch
 import whisper
-from ffpb import main as ffpb
 from whisper.utils import get_writer
+
+from decipher.ff import run
 
 
 def transcribe(video_in, output_dir, model, language, task, subs):
@@ -14,12 +16,11 @@ def transcribe(video_in, output_dir, model, language, task, subs):
     assert video_in.exists(), f"File {video_in} does not exist"
     output_dir = set_workdir(output_dir)
     audio_file = video_in.stem + ".aac"
-    stream = (
-        ffmpeg.input(video_in)
-        .output(audio_file, vn=None, acodec="copy")
-        .overwrite_output()
+
+    run(
+        ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-acodec", "copy", audio_file],
+        desc=f"Convert {video_in.name} to {audio_file}",
     )
-    execute(stream, desc=f"Converting {video_in.name} to {audio_file}...")
 
     gpu = torch.cuda.is_available()
     model = whisper.load_model(model)
@@ -28,12 +29,10 @@ def transcribe(video_in, output_dir, model, language, task, subs):
     )
     writer = get_writer("srt", ".")
 
-    temp_srt_file_name = "".join(
-        random.choice(("bcdfghjklmnpqrstvwxyz", "aeiou")[i % 2]) for i in range(10)
-    )
-    writer(result, temp_srt_file_name)
+    tmp_srt = "".join([random.choice(string.ascii_lowercase) for _ in range(15)])
+    writer(result, tmp_srt)
     srt_file = video_in.stem + ".srt"
-    os.rename(temp_srt_file_name + ".srt", srt_file)
+    shutil.move(tmp_srt + ".srt", srt_file)
 
     assert os.path.exists(srt_file), f"SRT file not generated?"
     if subs:
@@ -49,14 +48,14 @@ def subtitle(video_in, output_dir, subs, task):
     assert video_in.exists(), f"File {video_in} does not exist"
     assert subs.exists(), f"File {subs} does not exist"
     output_dir = set_workdir(output_dir)
+
     if task == "burn":
         video_out = video_in.stem + "_output" + video_in.suffix
         ass_file = video_in.stem + ".ass"
 
-        stream = ffmpeg.input(subs).output(ass_file, f="ass").overwrite_output()
-        execute(
-            stream,
-            desc="Converting `SubRip Subtitle file` to `Advanced SubStation Alpha file`",
+        run(
+            ["ffmpeg", "-y", "-i", str(subs), ass_file],
+            desc=f"Convert {subs.name} to {ass_file}",
         )
 
         with open(ass_file, "r", encoding="utf-8") as file:
@@ -70,46 +69,21 @@ def subtitle(video_in, output_dir, subs, task):
         with open(ass_file, "w", encoding="utf-8") as file:
             file.writelines(data)
 
-        stream = (
-            ffmpeg.input(video_in)
-            .output(video_out, vf=f"ass={ass_file}")
-            .overwrite_output()
-        )
-        execute(
-            stream,
-            desc=f"Burning `Advanced SubStation Alpha file` into {video_in.name}...",
+        run(
+            ["ffmpeg", "-y", "-i", str(video_in), "-vf", f"ass={ass_file}", video_out],
+            desc=f"Burning {ass_file} into {video_in.name}",
         )
 
     else:
         video_out = video_in.stem + "_output.mkv"
 
-        input_ffmpeg = ffmpeg.input(video_in)
-        input_ffmpeg_sub = ffmpeg.input(subs)
-
-        input_video = input_ffmpeg["v"]
-        input_audio = input_ffmpeg["a"]
-        input_subtitles = input_ffmpeg_sub["s"]
-        stream = ffmpeg.output(
-            input_video,
-            input_audio,
-            input_subtitles,
-            video_out,
-            vcodec="copy",
-            acodec="copy",
-            scodec="srt",
+        run(
+            ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subs), video_out],
+            desc=f"Add {subs.name} to {video_in.name}",
         )
-        stream = ffmpeg.overwrite_output(stream)
-        execute(stream, desc=f"Adding `SubRip Subtitle file` to {video_in.name}")
 
     file_janitor()
     print(f"Output -> {output_dir}")
-
-
-def execute(stream, desc=None):
-    if desc:
-        print(desc)
-    args = ffmpeg.get_args(stream)
-    ffpb(args)
 
 
 def file_janitor():
@@ -121,7 +95,7 @@ def file_janitor():
 def set_workdir(folder):
     folder = os.path.abspath(folder)
     if not os.path.exists(folder):
-        os.mkdir(folder)
+        os.makedirs(folder)
     os.chdir(folder)
     assert os.getcwd() == folder
     return folder
