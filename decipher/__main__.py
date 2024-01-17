@@ -2,8 +2,6 @@ import argparse
 import os
 import sys
 
-from whisper import available_models
-
 from decipher.action import subtitle, transcribe
 from decipher.ff import get_ffmpeg_exe
 
@@ -29,10 +27,9 @@ def cli():
     )
     t.add_argument(
         "--model",
-        default="small",
+        default="medium",
         type=str,
-        choices=available_models(),
-        help="name of the whisper model to use",
+        help="name of the whisper model to use https://huggingface.co/openai/whisper-large-v3#model-details",
     )
     t.add_argument(
         "--language", type=str, default=None, help="language spoken in the audio"
@@ -43,6 +40,13 @@ def cli():
         default="transcribe",
         choices=["transcribe", "translate"],
         help="whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')",
+    )
+    t.add_argument(
+        "--batch_size",
+        required=False,
+        type=int,
+        default=24,
+        help="number of parallel batches you want to compute. reduce if you face OOMs.",
     )
     t.add_argument(
         "-a",
@@ -93,6 +97,7 @@ def main():
             args.model,
             args.language,
             args.task,
+            args.batch_size,
             args.subtitle_action,
         )
     elif args.action == "subtitle":
