@@ -84,7 +84,6 @@ def transcribe(video_in, output_dir, model, language, task, batch_size, subs):
         subtitle(video_in, output_dir, srt_filename, subs)
         return
 
-    file_janitor()
     print(f"Output -> {output_dir}")
 
 
@@ -95,46 +94,25 @@ def subtitle(video_in, output_dir, subs, task):
     output_dir = set_workdir(output_dir)
 
     if task == "burn":
-        video_out = video_in.stem + "_output" + video_in.suffix
-        ass_file = video_in.stem + ".ass"
+        video_out = video_in.stem + "_out" + video_in.suffix
 
         run(
-            ["ffmpeg", "-y", "-i", str(subs), ass_file],
-            desc=f"Convert {subs.name} to {ass_file}",
-        )
-
-        with open(ass_file, "r", encoding="utf-8") as file:
-            data = file.readlines()
-        for i in range(len(data)):
-            if data[i].startswith("Style"):
-                data[
-                    i
-                ] = "Style: Default,Open Sans,16,&H00FFFFFF,&H000000FF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,4,0,0,2,10,10,10,1\n"
-                break
-        with open(ass_file, "w", encoding="utf-8") as file:
-            file.writelines(data)
-
-        run(
-            ["ffmpeg", "-y", "-i", str(video_in), "-vf", f"ass={ass_file}", video_out],
-            desc=f"Burning {ass_file} into {video_in.name}",
+            ["ffmpeg", "-y", "-i", str(video_in), "-vf",
+             f"subtitles={subs.name}:force_style='Fontname=Arial,Fontsize=16,OutlineColour=&H80000000,BorderStyle=4,"
+             "BackColour=&H80000000,Outline=0,Shadow=0,MarginV=10,Alignment=2,Bold=-1'",
+             video_out],
+            desc=f"Burning {subs.suffix.upper()} into {video_in.suffix.upper()}",
         )
 
     else:
-        video_out = video_in.stem + "_output.mkv"
+        video_out = video_in.stem + "_out.mkv"
 
         run(
             ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subs), video_out],
-            desc=f"Add {subs.name} to {video_in.name}",
+            desc=f"Add {subs.suffix.upper()} to .MKV",
         )
 
-    file_janitor()
     print(f"Output -> {output_dir}")
-
-
-def file_janitor():
-    for file in os.listdir():
-        if file.endswith(".ass") or file.endswith(".aac"):
-            os.remove(file)
 
 
 def set_workdir(folder):
