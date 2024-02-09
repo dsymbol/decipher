@@ -53,7 +53,7 @@ def audio_to_srt(audio_file, temp_srt, model="medium", task="transcribe", langua
         return_timestamps=True,
     )
 
-    with open(temp_srt, "w") as f:
+    with open(temp_srt, "w", encoding="utf-8") as f:
         for index, chunk in enumerate(outputs['chunks']):
             start_time = seconds_to_srt_time_format(chunk['timestamp'][0])
             end_time = seconds_to_srt_time_format(chunk['timestamp'][1])
