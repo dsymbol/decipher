@@ -86,8 +86,8 @@ def transcribe(video_in, output_dir=None, model="medium", language=None, task="t
     audio_file = mktemp(suffix=".aac", dir=output_dir)
 
     run(
-        ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-acodec", "copy", audio_file],
-        desc=f"Convert {video_in.suffix.upper()} to {Path(audio_file).suffix.upper()}",
+        ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-c:a", "aac", audio_file],
+        desc=f"Extracting audio from video",
     )
 
     temp_srt = mktemp(suffix=".srt", dir=output_dir)
@@ -122,20 +122,20 @@ def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> ResultF
         output_dir = Path(os.getcwd())
 
     if action == "burn":
-        video_out = output_dir / f"{video_in.stem}_out{video_in.suffix}"
+        video_out = output_dir / f"{video_in.stem}_out.mp4"
         run(
             ["ffmpeg", "-y", "-i", str(video_in), "-vf",
              f"subtitles={str(subtitle_file.name)}:force_style='Fontname=Arial,Fontsize=16,OutlineColour=&H80000000,BorderStyle=4,"
              "BackColour=&H80000000,Outline=0,Shadow=0,MarginV=10,Alignment=2,Bold=-1'",
              str(video_out)],
             cwd=str(subtitle_file.parent),  # https://trac.ffmpeg.org/ticket/3334
-            desc=f"Burning {subtitle_file.suffix.upper()} into {video_in.suffix.upper()}",
+            desc=f"Burning subtitles into video",
         )
     else:
-        video_out = output_dir / f"{video_in.stem}_out.mkv"
+        video_out = output_dir / f"{video_in.stem}_out.mp4"
         run(
-            ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subtitle_file), str(video_out)],
-            desc=f"Add {subtitle_file.suffix.upper()} to .MKV",
+            ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subtitle_file), '-c:s', 'mov_text', str(video_out)],
+            desc=f"Adding subtitles to video",
         )
 
     return ResultFiles(
