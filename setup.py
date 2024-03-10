@@ -10,6 +10,7 @@ setup(
         'optimum',
         'accelerate',
         'tqdm',
+        'gradio',
         'ffutils'
     ],
     packages=find_packages(),

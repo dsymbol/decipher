@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from decipher.action import subtitle, transcribe
+from decipher.gui import ui
 from ffutils import get_ffmpeg_exe
 
 
@@ -80,6 +81,14 @@ def cli():
         choices=["add", "burn"],
         help="whether to perform subtitle add or burn action",
     )
+
+    g = subparsers.add_parser("gui", help="launch a gradio gui")
+    g.add_argument(
+        '--share',
+        action="store_true",
+        default=False,
+        help="create a publicly shareable link for the interface (default: False)"
+    )
     return parser.parse_args()
 
 
@@ -99,7 +108,8 @@ def main():
         )
     elif args.action == "subtitle":
         output = subtitle(args.input, args.subtitle_file, args.output_dir, args.subtitle_action)
-
+    elif args.action == "gui":
+        return ui().launch(share=args.share)
     print(f"Result -> {output.output_dir}")
 
 

@@ -44,6 +44,14 @@ cd decipher && pip install .
 ```
 *Note: Do NOT use 'pip install decipher'. It installs a different package.*
 
+#### GUI (gradio) usage
+
+```bash
+decipher gui
+# or
+python -m decipher gui
+```
+
 #### Command-line usage
 
 The `transcribe` subcommand allows you to transcribe a video file into a SubRip Subtitle (SRT) file. 
