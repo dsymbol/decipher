@@ -5,8 +5,11 @@ from tempfile import mktemp
 
 import torch
 from transformers import pipeline
+from dataclasses import dataclass
 
 from decipher.ff import run
+
+root = Path(__file__).parent
 
 
 def seconds_to_srt_time_format(seconds):
@@ -62,63 +65,81 @@ def audio_to_srt(audio_file, temp_srt, model="medium", task="transcribe", langua
             f.write(f"{chunk['text'].strip()}\n\n")
 
 
-def transcribe(video_in, output_dir, model, language, task, batch_size, subs):
+@dataclass
+class ResultFiles:
+    output_dir: str
+    subtitle_file: str
+    video_file: str
+
+
+def transcribe(video_in, output_dir=None, model="medium", language=None, task="transcribe", batch_size=24,
+               subtitle_action=None) -> ResultFiles:
     video_in = Path(video_in).absolute()
     assert video_in.exists(), f"File {video_in} does not exist"
-    output_dir = set_workdir(output_dir)
-    audio_file = mktemp(suffix=".aac", dir=os.getcwd())
+
+    if output_dir:
+        output_dir = Path(output_dir).absolute()
+        output_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        output_dir = Path(os.getcwd())
+
+    audio_file = mktemp(suffix=".aac", dir=output_dir)
 
     run(
         ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-acodec", "copy", audio_file],
         desc=f"Convert {video_in.suffix.upper()} to {Path(audio_file).suffix.upper()}",
     )
 
-    temp_srt = mktemp(suffix=".srt", dir=os.getcwd())
+    temp_srt = mktemp(suffix=".srt", dir=output_dir)
     audio_to_srt(audio_file, temp_srt, model, task, language, batch_size)
     os.remove(audio_file)
-    srt_filename = video_in.stem + ".srt"
+    srt_filename = output_dir / f"{video_in.stem}.srt"
     shutil.move(temp_srt, srt_filename)
 
     assert os.path.exists(srt_filename), f"SRT file not generated?"
-    if subs:
-        subtitle(video_in, output_dir, srt_filename, subs)
-        return
 
-    print(f"Output -> {output_dir}")
+    result = None
+    if subtitle_action:
+        result = subtitle(video_in, srt_filename, output_dir, subtitle_action)
+
+    return ResultFiles(
+        str(output_dir),
+        str(srt_filename),
+        str(result.video_file) if result else None
+    )
 
 
-def subtitle(video_in, output_dir, subs, task):
-    video_in, subs = Path(video_in).absolute(), Path(subs).absolute()
+def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> ResultFiles:
+    video_in = Path(video_in).absolute()
+    subtitle_file = Path(subtitle_file).absolute()
     assert video_in.exists(), f"File {video_in} does not exist"
-    assert subs.exists(), f"File {subs} does not exist"
-    output_dir = set_workdir(output_dir)
+    assert subtitle_file.exists(), f"File {subtitle_file} does not exist"
 
-    if task == "burn":
-        video_out = video_in.stem + "_out" + video_in.suffix
+    if output_dir:
+        output_dir = Path(output_dir).absolute()
+        output_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        output_dir = Path(os.getcwd())
 
+    if action == "burn":
+        video_out = output_dir / f"{video_in.stem}_out{video_in.suffix}"
         run(
             ["ffmpeg", "-y", "-i", str(video_in), "-vf",
-             f"subtitles={subs.name}:force_style='Fontname=Arial,Fontsize=16,OutlineColour=&H80000000,BorderStyle=4,"
+             f"subtitles={str(subtitle_file.name)}:force_style='Fontname=Arial,Fontsize=16,OutlineColour=&H80000000,BorderStyle=4,"
              "BackColour=&H80000000,Outline=0,Shadow=0,MarginV=10,Alignment=2,Bold=-1'",
-             video_out],
-            desc=f"Burning {subs.suffix.upper()} into {video_in.suffix.upper()}",
+             str(video_out)],
+            cwd=str(subtitle_file.parent),  # https://trac.ffmpeg.org/ticket/3334
+            desc=f"Burning {subtitle_file.suffix.upper()} into {video_in.suffix.upper()}",
         )
-
     else:
-        video_out = video_in.stem + "_out.mkv"
-
+        video_out = output_dir / f"{video_in.stem}_out.mkv"
         run(
-            ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subs), video_out],
-            desc=f"Add {subs.suffix.upper()} to .MKV",
+            ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subtitle_file), str(video_out)],
+            desc=f"Add {subtitle_file.suffix.upper()} to .MKV",
         )
 
-    print(f"Output -> {output_dir}")
-
-
-def set_workdir(folder):
-    folder = os.path.abspath(folder)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    os.chdir(folder)
-    assert os.getcwd() == folder
-    return folder
+    return ResultFiles(
+        str(output_dir),
+        str(subtitle_file),
+        str(video_out)
+    )

@@ -1,11 +1,8 @@
 import argparse
-import os
 import sys
 
 from decipher.action import subtitle, transcribe
 from decipher.ff import get_ffmpeg_exe
-
-os.environ["PATH"] += os.pathsep + os.path.join(os.path.dirname(__file__), "bin")
 
 
 def cli():
@@ -23,7 +20,7 @@ def cli():
         help="input video file path e.g. video.mp4",
     )
     t.add_argument(
-        "-o", "--output_dir", type=str, default="result", help="output directory path"
+        "-o", "--output_dir", type=str, default=None, help="output directory path"
     )
     t.add_argument(
         "--model",
@@ -46,7 +43,7 @@ def cli():
         required=False,
         type=int,
         default=24,
-        help="number of parallel batches you want to compute. reduce if you face OOMs.",
+        help="Number of parallel batches reduce if you face out of memory errors",
     )
     t.add_argument(
         "-a",
@@ -66,7 +63,7 @@ def cli():
         help="input video file path e.g. video.mp4",
     )
     s.add_argument(
-        "-o", "--output_dir", type=str, default="result", help="output directory path"
+        "-o", "--output_dir", type=str, default=None, help="output directory path"
     )
     s.add_argument(
         "-s",
@@ -91,7 +88,7 @@ def main():
     args = cli()
 
     if args.action == "transcribe":
-        transcribe(
+        output = transcribe(
             args.input,
             args.output_dir,
             args.model,
@@ -101,7 +98,9 @@ def main():
             args.subtitle_action,
         )
     elif args.action == "subtitle":
-        subtitle(args.input, args.output_dir, args.subtitle_file, args.subtitle_action)
+        output = subtitle(args.input, args.subtitle_file, args.output_dir, args.subtitle_action)
+
+    print(f"Result -> {output.output_dir}")
 
 
 if __name__ == "__main__":

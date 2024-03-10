@@ -11,7 +11,11 @@ from urllib.parse import urlparse
 import requests
 from tqdm import tqdm
 
-BIN_PATH = os.path.join(os.path.dirname(__file__), "bin")
+from pathlib import Path
+
+BIN_PATH = Path(__file__).parent / "bin"
+BIN_PATH.mkdir(parents=True, exist_ok=True)
+os.environ["PATH"] += os.pathsep + str(BIN_PATH)
 
 BINARIES = {
     "Linux": {"ffmpeg": "ffmpeg-linux64-v4.1", "ffprobe": "ffprobe-linux64-v4.1"},
@@ -28,26 +32,24 @@ def get_ffmpeg_exe(ffmpeg: bool = True, ffprobe: bool = False):
     for exe in exes:
         if shutil.which(exe):
             continue
-        if not os.path.exists(BIN_PATH):
-            os.makedirs(BIN_PATH)
         url = (
             "https://github.com/imageio/imageio-binaries/raw/master/ffmpeg/"
             + BINARIES[os_][exe]
         )
-        filename = os.path.join(BIN_PATH, f"{exe}.exe" if os_ == "Windows" else exe)
+        filename = BIN_PATH / f"{exe}.exe" if os_ == "Windows" else exe
         print(
             f"{exe} was not found! downloading from imageio/imageio-binaries repository."
         )
         try:
-            download_file(url, filename)
+            download_file(url, str(filename))
         except Exception as f:
-            shutil.rmtree(BIN_PATH)
+            shutil.rmtree(str(BIN_PATH))
             sys.exit(str(f))
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
 
-def run(command: list, desc=None):
+def run(command: list, desc=None, cwd=None):
     """
     Adapted from Martin Larralde's code https://github.com/althonos/ffpb
     Personalized for my (dsymbol) use.
@@ -59,7 +61,7 @@ def run(command: list, desc=None):
     output = []
 
     with sp.Popen(
-        command, stdout=sp.PIPE, stderr=sp.STDOUT, universal_newlines=True, text=True
+        command, stdout=sp.PIPE, stderr=sp.STDOUT, universal_newlines=True, text=True, cwd=cwd
     ) as p:
         with tqdm(total=None, desc=desc, unit="s", ncols=80, leave=True) as t:
             for line in p.stdout:
