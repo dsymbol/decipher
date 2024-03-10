@@ -9,7 +9,8 @@ setup(
         'transformers',
         'optimum',
         'accelerate',
-        'tqdm'
+        'tqdm',
+        'ffutils'
     ],
     packages=find_packages(),
     entry_points={

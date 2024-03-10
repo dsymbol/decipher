@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from decipher.action import subtitle, transcribe
-from decipher.ff import get_ffmpeg_exe
+from ffutils import get_ffmpeg_exe
 
 
 def cli():

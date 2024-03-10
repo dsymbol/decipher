@@ -7,7 +7,7 @@ import torch
 from transformers import pipeline
 from dataclasses import dataclass
 
-from decipher.ff import run
+from ffutils import ffprog
 
 root = Path(__file__).parent
 
@@ -85,7 +85,7 @@ def transcribe(video_in, output_dir=None, model="medium", language=None, task="t
 
     audio_file = mktemp(suffix=".aac", dir=output_dir)
 
-    run(
+    ffprog(
         ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-c:a", "aac", audio_file],
         desc=f"Extracting audio from video",
     )
@@ -123,7 +123,7 @@ def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> ResultF
 
     if action == "burn":
         video_out = output_dir / f"{video_in.stem}_out.mp4"
-        run(
+        ffprog(
             ["ffmpeg", "-y", "-i", str(video_in), "-vf",
              f"subtitles={str(subtitle_file.name)}:force_style='Fontname=Arial,Fontsize=16,OutlineColour=&H80000000,BorderStyle=4,"
              "BackColour=&H80000000,Outline=0,Shadow=0,MarginV=10,Alignment=2,Bold=-1'",
@@ -133,7 +133,7 @@ def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> ResultF
         )
     else:
         video_out = output_dir / f"{video_in.stem}_out.mp4"
-        run(
+        ffprog(
             ["ffmpeg", "-y", "-i", str(video_in), "-i", str(subtitle_file), '-c:s', 'mov_text', str(video_out)],
             desc=f"Adding subtitles to video",
         )
