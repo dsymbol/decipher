@@ -5,13 +5,13 @@ setup(
     url='https://github.com/dsymbol/decipher',
     author='dsymbol',
     install_requires=[
-        'torch',
         'transformers',
         'optimum',
         'accelerate',
         'tqdm',
         'gradio',
-        'ffutils'
+        'ffutils',
+        'stable-ts==2.17.3',
     ],
     packages=find_packages(),
     entry_points={
