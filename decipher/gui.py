@@ -18,7 +18,7 @@ def __transcribe(video_in, model, language, task, batch_size, subs):
     )
     with open(result.subtitle_file, "r", encoding='utf-8') as f:
         subtitles = f.read()
-    return subtitles, result.video_file
+    return str(subtitles), str(result.video_file)
 
 
 def __subtitle(video_in, subs, task):
@@ -27,7 +27,7 @@ def __subtitle(video_in, subs, task):
         f.write(subs)
     result = action.subtitle(video_in, temp_srt, gettempdir(), task.lower())
     os.remove(temp_srt)
-    return result.video_file
+    return str(result.video_file)
 
 
 MODELS = ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3"]

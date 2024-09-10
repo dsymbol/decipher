@@ -6,10 +6,18 @@ from pathlib import Path
 from tempfile import mktemp
 
 import stable_whisper
+import torch
 
 from ffutils import ffprog
 
 root = Path(__file__).parent
+
+
+@dataclass
+class PathStore:
+    output_dir: Path
+    subtitle_file: Path
+    video_file: Path
 
 
 def audio_to_srt(
@@ -20,18 +28,19 @@ def audio_to_srt(
     language=None,
     batch_size=24,
 ):
-    model = stable_whisper.load_hf_whisper(model)
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+    print(f"{device.upper()} is being used for this transcription.")
+
+    model = stable_whisper.load_hf_whisper(model, device=device)
     result = model.transcribe(
         audio_file, language=language, task=task, batch_size=batch_size
     )
     result.to_srt_vtt(temp_srt, word_level=False)
-
-
-@dataclass
-class ResultFiles:
-    output_dir: str
-    subtitle_file: str
-    video_file: str
 
 
 def transcribe(
@@ -42,7 +51,7 @@ def transcribe(
     task="transcribe",
     batch_size=24,
     subtitle_action=None,
-) -> ResultFiles:
+) -> PathStore:
     video_in = Path(video_in).absolute()
     assert video_in.exists(), f"File {video_in} does not exist"
 
@@ -71,12 +80,10 @@ def transcribe(
     if subtitle_action:
         result = subtitle(video_in, srt_filename, output_dir, subtitle_action)
 
-    return ResultFiles(
-        str(output_dir), str(srt_filename), str(result.video_file) if result else None
-    )
+    return PathStore(output_dir, srt_filename, result.video_file if result else None)
 
 
-def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> ResultFiles:
+def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> PathStore:
     video_in = Path(video_in).absolute()
     subtitle_file = Path(subtitle_file).absolute()
     assert video_in.exists(), f"File {video_in} does not exist"
@@ -121,4 +128,4 @@ def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> ResultF
             desc=f"Adding subtitles to video",
         )
 
-    return ResultFiles(str(output_dir), str(subtitle_file), str(video_out))
+    return PathStore(output_dir, subtitle_file, video_out)
