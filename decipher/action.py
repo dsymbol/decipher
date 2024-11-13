@@ -1,13 +1,9 @@
-import os
-import shutil
-
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import mktemp
+from tempfile import TemporaryDirectory
 
 import stable_whisper
 import torch
-
 from ffutils import ffprog
 
 root = Path(__file__).parent
@@ -17,12 +13,11 @@ root = Path(__file__).parent
 class PathStore:
     output_dir: Path
     subtitle_file: Path
-    video_file: Path
+    video_file: Path = None
 
 
 def audio_to_srt(
     audio_file,
-    temp_srt,
     model="medium",
     task="transcribe",
     language=None,
@@ -40,12 +35,12 @@ def audio_to_srt(
     result = model.transcribe(
         audio_file, language=language, task=task, batch_size=batch_size
     )
-    result.to_srt_vtt(temp_srt, word_level=False)
+    return result.to_srt_vtt(word_level=False)
 
 
 def transcribe(
     video_in,
-    output_dir=None,
+    output_dir=".",
     model="medium",
     language=None,
     task="transcribe",
@@ -55,45 +50,42 @@ def transcribe(
     video_in = Path(video_in).absolute()
     assert video_in.exists(), f"File {video_in} does not exist"
 
-    if output_dir:
-        output_dir = Path(output_dir).absolute()
-        output_dir.mkdir(parents=True, exist_ok=True)
-    else:
-        output_dir = Path(os.getcwd())
+    output_dir = Path(output_dir).absolute()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    audio_file = mktemp(suffix=".aac", dir=output_dir)
+    with TemporaryDirectory() as _tempdir:
+        tempdir = Path(_tempdir)
+        audio_file = str(tempdir / "audio.aac")
 
-    ffprog(
-        ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-c:a", "aac", audio_file],
-        desc=f"Extracting audio from video",
-    )
+        ffprog(
+            ["ffmpeg", "-y", "-i", str(video_in), "-vn", "-c:a", "aac", audio_file],
+            desc=f"Extracting audio from video",
+        )
 
-    temp_srt = mktemp(suffix=".srt", dir=output_dir)
-    audio_to_srt(audio_file, temp_srt, model, task, language, batch_size)
-    os.remove(audio_file)
-    srt_filename = output_dir / f"{video_in.stem}.srt"
-    shutil.move(temp_srt, srt_filename)
+        srt_text = audio_to_srt(audio_file, model, task, language, batch_size)
 
-    assert os.path.exists(srt_filename), f"SRT file not generated?"
+    srt_file = output_dir / f"{video_in.stem}.srt"
+    with open(srt_file, "w", encoding="utf-8") as f:
+        f.write(srt_text)
 
-    result = None
+    assert srt_file.exists(), f"SRT file not generated?"
+
     if subtitle_action:
-        result = subtitle(video_in, srt_filename, output_dir, subtitle_action)
+        store = subtitle(video_in, srt_file, output_dir, subtitle_action)
+    else:
+        store = PathStore(output_dir, srt_file)
 
-    return PathStore(output_dir, srt_filename, result.video_file if result else None)
+    return store
 
 
-def subtitle(video_in, subtitle_file, output_dir=None, action="burn") -> PathStore:
+def subtitle(video_in, subtitle_file, output_dir=".", action="burn") -> PathStore:
     video_in = Path(video_in).absolute()
     subtitle_file = Path(subtitle_file).absolute()
     assert video_in.exists(), f"File {video_in} does not exist"
     assert subtitle_file.exists(), f"File {subtitle_file} does not exist"
 
-    if output_dir:
-        output_dir = Path(output_dir).absolute()
-        output_dir.mkdir(parents=True, exist_ok=True)
-    else:
-        output_dir = Path(os.getcwd())
+    output_dir = Path(output_dir).absolute()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     if action == "burn":
         video_out = output_dir / f"{video_in.stem}_out.mp4"

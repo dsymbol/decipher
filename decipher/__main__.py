@@ -1,9 +1,10 @@
 import argparse
 import sys
 
-from decipher.action import subtitle, transcribe
-from decipher.gui import ui
 from ffutils import get_ffmpeg_exe
+
+from .action import subtitle, transcribe
+from .gui import ui
 
 
 def cli():
@@ -21,7 +22,7 @@ def cli():
         help="input video file path e.g. video.mp4",
     )
     t.add_argument(
-        "-o", "--output_dir", type=str, default=None, help="output directory path"
+        "-o", "--output_dir", type=str, default=".", help="output directory path"
     )
     t.add_argument(
         "--model",
@@ -64,7 +65,7 @@ def cli():
         help="input video file path e.g. video.mp4",
     )
     s.add_argument(
-        "-o", "--output_dir", type=str, default=None, help="output directory path"
+        "-o", "--output_dir", type=str, default=".", help="output directory path"
     )
     s.add_argument(
         "-s",
@@ -84,10 +85,10 @@ def cli():
 
     g = subparsers.add_parser("gui", help="launch a gradio gui")
     g.add_argument(
-        '--share',
+        "--share",
         action="store_true",
         default=False,
-        help="create a publicly shareable link for the interface (default: False)"
+        help="create a publicly shareable link for the interface (default: False)",
     )
     return parser.parse_args()
 
@@ -107,7 +108,9 @@ def main():
             args.subtitle_action,
         )
     elif args.action == "subtitle":
-        output = subtitle(args.input, args.subtitle_file, args.output_dir, args.subtitle_action)
+        output = subtitle(
+            args.input, args.subtitle_file, args.output_dir, args.subtitle_action
+        )
     elif args.action == "gui":
         return ui().launch(share=args.share)
     print(f"Result -> {output.output_dir}")
